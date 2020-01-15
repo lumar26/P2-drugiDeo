@@ -1,0 +1,294 @@
+package grad.exception;
+
+public class GradException extends RuntimeException {
+
+	private static final long serialVersionUID = 1L;
+
+	public GradException(String message) {
+		super(message);
+	}
+}
+
+package grad;
+import java.io.Serializable;
+
+import grad.exception.GradException;
+
+public class Grad implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private String naziv = "nepoznat";
+	private int brojStanovnika = 0;
+
+	public String getNaziv() {
+		return naziv;
+	}
+
+	public void setNaziv(String naziv) {
+		if (naziv == null || naziv.length() < 2) {
+			throw new GradException("Naziv ne moze biti null ili string manji od dva karaktera");
+		}
+		this.naziv = naziv;
+	}
+
+	public int getBrojStanovnika() {
+		return brojStanovnika;
+	}
+
+	public void setBrojStanovnika(int brojStanovnika) {
+		if (brojStanovnika <= 0) {
+			throw new GradException("Broj stanovnika mora biti veci od nule.");
+		}
+		this.brojStanovnika = brojStanovnika;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Grad)) {
+			throw new GradException("Ovo nije objekat klase Grad.");
+		}
+		
+		Grad g = (Grad) obj;
+		
+		return this.getNaziv().equals(g.getNaziv());
+	}
+}
+
+package grad;
+
+public interface Demografija {
+
+	void dodajGrad(Grad grad);
+
+	void upisiGradoveUKategorije() throws Exception;
+
+}
+
+
+package grad;
+
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.LinkedList;
+import java.util.List;
+
+import grad.exception.GradException;
+
+public class KatalogGradova implements Demografija {
+	
+	private List<Grad> gradovi = new LinkedList<>();
+	
+	@Override
+	public void dodajGrad(Grad grad) {
+		if (!gradovi.contains(grad)) {
+			// ova promenljiva nam sluzi kao indikator da znamo da li smo uneli grad u listu ili ne
+			boolean unesen = false;
+			
+			for (int i = 0; i < gradovi.size(); i++) {
+				if (gradovi.get(i).getBrojStanovnika() < grad.getBrojStanovnika()) {
+					gradovi.add(i, grad);
+					unesen = true;
+					break;
+				}
+			}
+			
+			// Kada promenljiva 'unesen' ima vrednost false, to oznacava situaciju kada u listi 
+			// svi gradovi imaju veci broj stanovnika od novog grada i stoga uslov u petlji nijednom 
+			// nije bio ispunjen. U tom slucaju, novi grad unosimo na kraj liste.
+			if (!unesen) {
+				gradovi.add(gradovi.size(), grad);
+			}
+		} else {
+			throw new GradException("Grad vec postoji u katalogu");
+		}
+	}
+
+	@Override
+	public void upisiGradoveUKategorije() {
+		try (ObjectOutputStream maliGradoviOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("mali_gradovi.out")));
+				ObjectOutputStream srednjiGradoviOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("srednji_gradovi.out")));
+				ObjectOutputStream velikiGradoviOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("veliki_gradovi.out")));){
+
+			for (int i = 0; i < gradovi.size(); i++) {
+				if (gradovi.get(i).getBrojStanovnika() < 100000) {
+					maliGradoviOut.writeObject(gradovi.get(i));
+				} else if (gradovi.get(i).getBrojStanovnika() <= 1000000) {
+					srednjiGradoviOut.writeObject(gradovi.get(i));
+				} else {
+					velikiGradoviOut.writeObject(gradovi.get(i));
+				}
+			}
+		} catch (Exception ex) {
+			throw new GradException("Greska prilikom upisivanja u fajlove.");
+		}
+	}
+}
+
+
+package grad.gui;
+
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+
+import grad.Grad;
+import grad.KatalogGradova;
+import grad.exception.GradException;
+
+public class GradoviGUI extends JFrame {
+
+	private static final long serialVersionUID = 1L;
+
+	private JPanel contentPane;
+	private JTextField jtfNazivGrada;
+	private JTextField jtfBrojStanovnika;
+
+	private KatalogGradova katalog = new KatalogGradova();
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					GradoviGUI frame = new GradoviGUI();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public GradoviGUI() {
+		setResizable(false);
+		setTitle("Katalog gradova");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 431, 190);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+
+		JLabel lblNazivGrada = new JLabel("Naziv grada");
+		lblNazivGrada.setBounds(29, 19, 116, 16);
+		contentPane.add(lblNazivGrada);
+
+		JLabel lblBrojStanovnika = new JLabel("Broj stanovnika");
+		lblBrojStanovnika.setBounds(230, 19, 145, 16);
+		contentPane.add(lblBrojStanovnika);
+
+		JButton btnDodaj = new JButton("Dodaj");
+		btnDodaj.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					String naziv = jtfNazivGrada.getText();
+					int brojStanovnika = Integer.parseInt(jtfBrojStanovnika.getText());
+
+					Grad noviGrad = new Grad();
+					noviGrad.setNaziv(naziv);
+					noviGrad.setBrojStanovnika(brojStanovnika);
+					
+					katalog.dodajGrad(noviGrad);
+
+					JOptionPane.showMessageDialog(null, "Grad je uspešno dodat", "Uspesno", JOptionPane.INFORMATION_MESSAGE);
+				} catch (GradException ex) {
+					JOptionPane.showMessageDialog(null, "Greška prilikom dodavanja grada", "Greska", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+		btnDodaj.setBounds(28, 99, 117, 29);
+		contentPane.add(btnDodaj);
+
+		JButton btnSacuvaj = new JButton("Sacuvaj");
+		btnSacuvaj.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					katalog.upisiGradoveUKategorije();
+					
+					JOptionPane.showMessageDialog(null, "Gradovi su sačuvani", "Uspesno", JOptionPane.INFORMATION_MESSAGE);
+				} catch (GradException ex) {
+					JOptionPane.showMessageDialog(null, "Greška prilikom čuvanja gradova", "Greska", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+		btnSacuvaj.setBounds(157, 99, 117, 29);
+		contentPane.add(btnSacuvaj);
+
+		JButton btnObrisi = new JButton("Obrisi");
+		btnObrisi.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				jtfNazivGrada.setText(null);
+				jtfBrojStanovnika.setText(null);
+			}
+		});
+		btnObrisi.setBounds(286, 99, 117, 29);
+		contentPane.add(btnObrisi);
+
+		jtfNazivGrada = new JTextField();
+		jtfNazivGrada.setBounds(28, 47, 134, 28);
+		contentPane.add(jtfNazivGrada);
+		jtfNazivGrada.setColumns(10);
+
+		jtfBrojStanovnika = new JTextField();
+		jtfBrojStanovnika.setBounds(230, 47, 134, 28);
+		contentPane.add(jtfBrojStanovnika);
+		jtfBrojStanovnika.setColumns(10);
+	}
+}
+
+
+package ispravka_koda;
+
+import java.util.List;
+
+public class StringOperacije {
+	public static void izbaciDuplikate(List<String> lista) {
+		boolean imaDuplikata;
+		do {
+			imaDuplikata = false;
+			for (int i = 0; i < lista.size(); i++)
+				if (lista.lastIndexOf(lista.get(i)) != i) {
+					lista.remove(lista.lastIndexOf(lista.get(i)));
+					imaDuplikata = true;
+					break;
+				}
+		} while (imaDuplikata);
+		System.out.println(lista);
+	}
+}
+
+
+package ispravka_koda;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class ProbaStringOperacije {
+
+	public static void main(String[] args) {
+		List<String> lista = new LinkedList<>();
+		lista.add("Pera");
+		lista.add("Mika");
+		lista.add("Zika");
+		lista.add("Pera");
+		lista.add("Pera");
+		
+		StringOperacije.izbaciDuplikate(lista);
+	}
+}
+

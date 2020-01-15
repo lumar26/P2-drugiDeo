@@ -1,0 +1,451 @@
+package autobuska_stanica;
+
+import java.util.GregorianCalendar;
+
+public class Polazak {
+
+	private String destinacija;
+	private GregorianCalendar vreme;
+	private int brojSlobodnihMesta;
+
+	public String getDestinacija() {
+		return destinacija;
+	}
+
+	public void setDestinacija(String destinacija) {
+		if ((destinacija == null) || destinacija.isEmpty()) {
+			throw new RuntimeException("Greska: Destinacija ne sme biti null ili prazan string!");
+		} else {
+			this.destinacija = destinacija;
+		}
+	}
+
+	public GregorianCalendar getVreme() {
+		return vreme;
+	}
+
+	public void setVreme(GregorianCalendar vreme) {
+		if ((vreme == null) || vreme.before(new GregorianCalendar())) {
+			throw new RuntimeException("Greska: Vreme ne sme biti null ili trenutak u proslosti!");
+		} else {
+			this.vreme = vreme;
+		}
+	}
+
+	public int getBrojSlobodnihMesta() {
+		return brojSlobodnihMesta;
+	}
+
+	public void setBrojSlobodnihMesta(int brojSlobodnihMesta) {
+		if (brojSlobodnihMesta <= 0) {
+			throw new RuntimeException("Greska: Broj slobodnih mesta ne sme biti negativan broj!!");
+		} else {
+			this.brojSlobodnihMesta = brojSlobodnihMesta;
+		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Polazak))
+			return false;
+
+		Polazak p = (Polazak) obj;
+
+		return this.destinacija.equals(p.destinacija) && this.vreme.equals(p.vreme);
+	}
+}
+
+
+package autobuska_stanica.rezervacije;
+
+import autobuska_stanica.Polazak;
+
+public interface RezervacijaKarata {
+	
+	void unesiPolazak(Polazak polazakZaUnos) throws Exception;
+	boolean rezervisiKarte(String destinacija, int brojKarata);
+}
+
+
+package autobuska_stanica;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import autobuska_stanica.rezervacije.RezervacijaKarata;
+
+public class AutobuskaStanica implements RezervacijaKarata {
+
+	private List<Polazak> polasci = new LinkedList<>();
+
+	public void unesiPolazak(Polazak polazak) throws Exception {
+		if (polazak == null) {
+			throw new Exception("Greska: Polazak ne sme biti null");
+		}
+
+		if (!polasci.contains(polazak)) {
+			polasci.add(0, polazak);
+		} else {
+			throw new Exception("Polazak se vec nalazi u listi");
+		}
+	}
+
+	@Override
+	public boolean rezervisiKarte(String destinacija, int brojKarata) {
+		for (Polazak polazak : polasci) {
+			if (polazak.getDestinacija().equals(destinacija)
+					&& (polazak.getBrojSlobodnihMesta() - brojKarata) >= 0) {
+
+				polazak.setBrojSlobodnihMesta(polazak.getBrojSlobodnihMesta() - brojKarata);
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
+
+package autobuska_stanica.gui;
+
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.GregorianCalendar;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+
+import autobuska_stanica.AutobuskaStanica;
+import autobuska_stanica.Polazak;
+
+public class AutobuskaStanicaGUI extends JFrame {
+
+	private static final long serialVersionUID = 1L;
+
+	private JPanel contentPane;
+	private JLabel lblDestinacija;
+	private JLabel lblPolazak;
+	private JLabel lblBrojSlobodnihMesta;
+	private JTextField jtfDestinacija;
+	private JTextField jtfDan;
+	private JTextField jtfMesec;
+	private JTextField jtfGodina;
+	private JTextField jtfSlobodnaMesta;
+	private JLabel label;
+	private JLabel label_1;
+	private JButton btnDodaj;
+	private JButton btnObrisi;
+	private JLabel lblRezervacija;
+	private JLabel lblDestinacija_1;
+	private JTextField jtfDestinacija2;
+	private JLabel lblBrojKarata;
+	private JTextField jtfBrojKarata;
+	private JLabel lblUnos;
+	private JButton btnRezervisi;
+
+	private AutobuskaStanica stanica = new AutobuskaStanica();
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					AutobuskaStanicaGUI frame = new AutobuskaStanicaGUI();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public AutobuskaStanicaGUI() {
+		setResizable(false);
+		setTitle("Autobuska stanica");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(10, 0, 493, 342);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+		contentPane.add(getLblDestinacija());
+		contentPane.add(getLblPolazak());
+		contentPane.add(getLblBrojSlobodnihMesta());
+		contentPane.add(getJtfDestinacija());
+		contentPane.add(getJtfDan());
+		contentPane.add(getJtfMesec());
+		contentPane.add(getJtfGodina());
+		contentPane.add(getJtfSlobodnaMesta());
+		contentPane.add(getLabel());
+		contentPane.add(getLabel_1());
+		contentPane.add(getBtnDodaj());
+		contentPane.add(getBtnObrisi());
+		contentPane.add(getLblRezervacija());
+		contentPane.add(getLblDestinacija_1());
+		contentPane.add(getJtfDestinacija2());
+		contentPane.add(getLblBrojKarata());
+		contentPane.add(getJtfBrojKarata());
+		contentPane.add(getLblUnos());
+		contentPane.add(getBtnRezervisi());
+	}
+
+	private JLabel getLblDestinacija() {
+		if (lblDestinacija == null) {
+			lblDestinacija = new JLabel("Destinacija:");
+			lblDestinacija.setBounds(20, 44, 146, 16);
+		}
+		return lblDestinacija;
+	}
+
+	private JLabel getLblPolazak() {
+		if (lblPolazak == null) {
+			lblPolazak = new JLabel("Polazak (d/m/g):");
+			lblPolazak.setBounds(20, 72, 146, 16);
+		}
+		return lblPolazak;
+	}
+
+	private JLabel getLblBrojSlobodnihMesta() {
+		if (lblBrojSlobodnihMesta == null) {
+			lblBrojSlobodnihMesta = new JLabel("Broj slobodnih mesta:");
+			lblBrojSlobodnihMesta.setBounds(20, 100, 146, 16);
+		}
+		return lblBrojSlobodnihMesta;
+	}
+
+	private JTextField getJtfDestinacija() {
+		if (jtfDestinacija == null) {
+			jtfDestinacija = new JTextField();
+			jtfDestinacija.setBounds(178, 39, 210, 26);
+			jtfDestinacija.setColumns(10);
+		}
+		return jtfDestinacija;
+	}
+
+	private JTextField getJtfDan() {
+		if (jtfDan == null) {
+			jtfDan = new JTextField();
+			jtfDan.setBounds(178, 67, 45, 26);
+			jtfDan.setColumns(10);
+		}
+		return jtfDan;
+	}
+
+	private JTextField getJtfMesec() {
+		if (jtfMesec == null) {
+			jtfMesec = new JTextField();
+			jtfMesec.setColumns(10);
+			jtfMesec.setBounds(235, 67, 45, 26);
+		}
+		return jtfMesec;
+	}
+
+	private JTextField getJtfGodina() {
+		if (jtfGodina == null) {
+			jtfGodina = new JTextField();
+			jtfGodina.setColumns(10);
+			jtfGodina.setBounds(292, 67, 96, 26);
+		}
+		return jtfGodina;
+	}
+
+	private JTextField getJtfSlobodnaMesta() {
+		if (jtfSlobodnaMesta == null) {
+			jtfSlobodnaMesta = new JTextField();
+			jtfSlobodnaMesta.setColumns(10);
+			jtfSlobodnaMesta.setBounds(178, 95, 45, 26);
+		}
+		return jtfSlobodnaMesta;
+	}
+
+	private JLabel getLabel() {
+		if (label == null) {
+			label = new JLabel("/");
+			label.setBounds(283, 72, 7, 16);
+		}
+		return label;
+	}
+
+	private JLabel getLabel_1() {
+		if (label_1 == null) {
+			label_1 = new JLabel("/");
+			label_1.setBounds(227, 72, 7, 16);
+		}
+		return label_1;
+	}
+
+	private JButton getBtnDodaj() {
+		if (btnDodaj == null) {
+			btnDodaj = new JButton("Dodaj");
+			btnDodaj.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					try {
+						String destinacija = jtfDestinacija.getText();
+						int dan = Integer.parseInt(jtfDan.getText());
+						int mesec = Integer.parseInt(jtfMesec.getText());
+						int godina = Integer.parseInt(jtfGodina.getText());
+						int brojSlobodnihMesta = Integer.parseInt(jtfSlobodnaMesta.getText());
+
+						GregorianCalendar datum = new GregorianCalendar(godina, mesec - 1, dan);
+
+						Polazak polazak = new Polazak();
+						polazak.setDestinacija(destinacija);
+						polazak.setVreme(datum);
+						polazak.setBrojSlobodnihMesta(brojSlobodnihMesta);
+
+						stanica.unesiPolazak(polazak);
+						JOptionPane.showMessageDialog(null, "Polazak je uspesno dodat", "Uspesno",
+								JOptionPane.INFORMATION_MESSAGE);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, e1.getMessage(), "Greska", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+			btnDodaj.setBounds(20, 128, 117, 29);
+		}
+		return btnDodaj;
+	}
+
+	private JButton getBtnObrisi() {
+		if (btnObrisi == null) {
+			btnObrisi = new JButton("Obrisi");
+			btnObrisi.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					jtfDestinacija.setText(null);
+					jtfDan.setText(null);
+					jtfMesec.setText(null);
+					jtfGodina.setText(null);
+					jtfBrojKarata.setText(null);
+				}
+			});
+			btnObrisi.setBounds(150, 128, 117, 29);
+		}
+		return btnObrisi;
+	}
+
+	private JLabel getLblRezervacija() {
+		if (lblRezervacija == null) {
+			lblRezervacija = new JLabel("REZERVACIJA");
+			lblRezervacija.setFont(new Font("Lucida Grande", Font.PLAIN, 16));
+			lblRezervacija.setBounds(20, 187, 146, 16);
+		}
+		return lblRezervacija;
+	}
+
+	private JLabel getLblDestinacija_1() {
+		if (lblDestinacija_1 == null) {
+			lblDestinacija_1 = new JLabel("Destinacija:");
+			lblDestinacija_1.setBounds(20, 215, 146, 16);
+		}
+		return lblDestinacija_1;
+	}
+
+	private JTextField getJtfDestinacija2() {
+		if (jtfDestinacija2 == null) {
+			jtfDestinacija2 = new JTextField();
+			jtfDestinacija2.setColumns(10);
+			jtfDestinacija2.setBounds(178, 210, 210, 26);
+		}
+		return jtfDestinacija2;
+	}
+
+	private JLabel getLblBrojKarata() {
+		if (lblBrojKarata == null) {
+			lblBrojKarata = new JLabel("Broj karata:");
+			lblBrojKarata.setBounds(20, 243, 147, 16);
+		}
+		return lblBrojKarata;
+	}
+
+	private JTextField getJtfBrojKarata() {
+		if (jtfBrojKarata == null) {
+			jtfBrojKarata = new JTextField();
+			jtfBrojKarata.setColumns(10);
+			jtfBrojKarata.setBounds(178, 238, 45, 26);
+		}
+		return jtfBrojKarata;
+	}
+
+	private JLabel getLblUnos() {
+		if (lblUnos == null) {
+			lblUnos = new JLabel("UNOS");
+			lblUnos.setFont(new Font("Lucida Grande", Font.PLAIN, 16));
+			lblUnos.setBounds(20, 16, 146, 16);
+		}
+		return lblUnos;
+	}
+
+	private JButton getBtnRezervisi() {
+		if (btnRezervisi == null) {
+			btnRezervisi = new JButton("Rezervisi");
+			btnRezervisi.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String destinacija = jtfDestinacija2.getText();
+					int brojKarata = Integer.parseInt(jtfBrojKarata.getText());
+
+					boolean uspesno = stanica.rezervisiKarte(destinacija, brojKarata);
+
+					if (uspesno) {
+						JOptionPane.showMessageDialog(null, "Rezervacija uspesno obavljena", "Uspesno",
+								JOptionPane.INFORMATION_MESSAGE);
+					} else {
+						JOptionPane.showMessageDialog(null, "Rezervacija nije uspela", "Greska",
+								JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+			btnRezervisi.setBounds(20, 271, 117, 29);
+		}
+		return btnRezervisi;
+	}
+}
+
+package ispravka_koda;
+
+import java.util.List;
+
+public class StringIspisivac4 {
+	public static void ispisiParalelogram(List<String> lista) {
+		System.out.println("*" + lista.get(0) + "*");
+		String s = " ";
+		for (int i = 0; i < lista.get(0).length(); i++) {
+			System.out.print(s + lista.get(1).charAt(i));
+			for (int j = 0; j < lista.get(0).length(); j++)
+				System.out.print(" ");
+			System.out.println(lista.get(2).charAt(i));
+			s = s + " ";
+		}
+		System.out.println(s + "*" + lista.get(3) + "*");
+	}
+}
+
+package ispravka_koda;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class ProbaStringIspisivac4 {
+
+	public static void main(String[] args) {
+		List<String> lista = new LinkedList<>();
+		lista.add("BELO");
+		lista.add("CRNO");
+		lista.add("ZUTO");
+		lista.add("SIVO");
+		
+		StringIspisivac4.ispisiParalelogram(lista);
+	}
+}
+

@@ -1,0 +1,5 @@
+Broj domacinstava: 3
+Prosecna primanja po domacinstvu na mesecnom nivou: 33333.333333333336
+Prosecan broj odraslih po domacinstvu: 2
+Prosecan broj dece po domacinstvu: 3
+Prosecna primanja po clanu domacinstva na mesecnom nivou: 6666.666666666667

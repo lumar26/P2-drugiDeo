@@ -1,0 +1,256 @@
+package popis.izuzeci;
+
+public class StatistikaException extends Exception {
+
+	private static final long serialVersionUID = 1L;
+
+	public StatistikaException(String message) {
+		super(message);
+	}
+}
+
+package popis;
+
+import java.io.Serializable;
+
+public class Domacinstvo implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private String mesto;
+	private int brojOdraslih;
+	private int brojDece;
+	private double mesecnaPrimanja;
+
+	public String getMesto() {
+		return mesto;
+	}
+
+	public void setMesto(String mesto) {
+		if (mesto == null || mesto.length() < 5 || mesto.length() > 13) {
+			throw new RuntimeException("Mesto ne moze biti null, kraci od pet znakova ili duzi od trinaest znakova.");
+		}
+		this.mesto = mesto;
+	}
+
+	public int getBrojOdraslih() {
+		return brojOdraslih;
+	}
+
+	public void setBrojOdraslih(int brojOdraslih) {
+		if (brojOdraslih < 0) {
+			throw new RuntimeException("Broj odraslih ne moze biti manja od nule.");
+		}
+		this.brojOdraslih = brojOdraslih;
+	}
+
+	public int getBrojDece() {
+		return brojDece;
+	}
+
+	public void setBrojDece(int brojDece) {
+		if (brojDece < 0) {
+			throw new RuntimeException("Broj dece ne moze biti manji od nule.");
+		}
+		this.brojDece = brojDece;
+	}
+
+	public double getMesecnaPrimanja() {
+		return mesecnaPrimanja;
+	}
+
+	public void setMesecnaPrimanja(double mesecnaPrimanja) {
+		if (mesecnaPrimanja < 0) {
+			throw new RuntimeException("Mesecna primanja ne moze biti manji od nule.");
+		}
+		this.mesecnaPrimanja = mesecnaPrimanja;
+	}
+
+	@Override
+	public String toString() {
+		return "Mesto: " + mesto + "\t, broj odraslih: " + brojOdraslih + "\t, broj dece: " + brojDece
+				+ "\t, mesecna primanja: " + mesecnaPrimanja;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Domacinstvo))
+			return false;
+
+		Domacinstvo d = (Domacinstvo) obj;
+
+		return this.mesto.equals(d.mesto) && 
+				this.brojOdraslih == d.brojOdraslih && 
+				this.brojDece == d.brojDece && 
+				this.mesecnaPrimanja == d.mesecnaPrimanja;
+	}
+}
+
+
+package popis;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.LinkedList;
+import java.util.List;
+
+import popis.izuzeci.StatistikaException;
+
+public class PopisDomacinstava {
+
+	private List<Domacinstvo> domacinstva;
+
+	public PopisDomacinstava() {
+		domacinstva = new LinkedList<>();
+	}
+
+	public void upisiDomacinstvaBezPrimanja() throws StatistikaException {
+		if (domacinstva.isEmpty()) {
+			throw new StatistikaException("Nema unetih domacinstava.");
+		}
+		
+		try (PrintWriter out = new PrintWriter(
+									new BufferedWriter(
+											new FileWriter("domacinstva_bez_prihoda.txt")))) {
+			
+			
+			for (int i = 0; i < domacinstva.size(); i++) {
+				if (domacinstva.get(i).getMesecnaPrimanja() == 0) {
+					out.print(domacinstva.get(i).getMesto());
+					out.print("#");
+					out.print(domacinstva.get(i).getBrojOdraslih());
+					out.print("#");
+					out.print(domacinstva.get(i).getBrojDece());
+					out.println();
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Greska: " + e.getMessage());
+		}
+	}
+	
+	public void statistikaDomacinstava() {
+		double ukupnaPrimanja = 0;
+		int ukupanBrojOdraslih = 0;
+		int ukupanBrojDece = 0;
+		
+		for (int i = 0; i < domacinstva.size(); i++) {
+			ukupnaPrimanja += domacinstva.get(i).getMesecnaPrimanja();
+			ukupanBrojOdraslih += domacinstva.get(i).getBrojOdraslih();
+			ukupanBrojDece += domacinstva.get(i).getBrojDece();
+		}
+			
+		try (PrintWriter out = new PrintWriter(
+									new BufferedWriter(
+											new FileWriter("izvestaj.txt")))) {
+			
+			out.println("Ukupan broj domacinstava je: " + domacinstva.size());
+			out.println("Prosecan iznos mesecnih primanja po domacinstvu je: " + ukupnaPrimanja / domacinstva.size());
+			
+			// cast-ujemo u double da bismo izbegli celobrojno deljenje
+			out.println("Prosecan broj odraslih po domacinstvu je: " + (double) ukupanBrojOdraslih / domacinstva.size());
+			out.println("Prosecan broj dece po domacinstvu je: " + (double) ukupanBrojDece / domacinstva.size());
+			out.println("Prosecan iznos mesecnih primanja po clanu domacinstva je: " + ukupnaPrimanja / (ukupanBrojOdraslih + ukupanBrojDece));
+		} catch (Exception e) {
+			System.out.println("Greska: " + e.getMessage());
+		}
+	}
+	
+	public void ucitajDomacinstvaSaTastature() {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		try {
+			System.out.print("Unesite broj domacinstava: ");
+			int brojDomacinstava = Integer.parseInt(br.readLine());
+			
+			for (int i = 0; i < brojDomacinstava; i++) {
+				try {
+					System.out.print("Unesite mesto: ");
+					String mesto = br.readLine();
+					
+					System.out.print("Unesite broj odraslih: ");
+					int brojOdraslih = Integer.parseInt(br.readLine());
+					
+					System.out.print("Unesite broj dece: ");
+					int brojDece = Integer.parseInt(br.readLine());
+					
+					System.out.print("Unesite mesecna primanja: ");
+					int mesecnaPrimanja = Integer.parseInt(br.readLine());
+					
+					Domacinstvo domacinstvo = new Domacinstvo();
+					domacinstvo.setMesto(mesto);
+					domacinstvo.setBrojOdraslih(brojOdraslih);
+					domacinstvo.setBrojDece(brojDece);
+					domacinstvo.setMesecnaPrimanja(mesecnaPrimanja);
+					
+					domacinstva.add(domacinstvo);
+				} catch (Exception e) {
+					System.out.println("Greska prilikom unosa domacinstva: " + e.getMessage());
+					
+					System.out.print("Unesite mesto: ");
+					String mesto = br.readLine();
+					
+					System.out.print("Unesite broj odraslih: ");
+					int brojOdraslih = Integer.parseInt(br.readLine());
+					
+					System.out.print("Unesite broj dece: ");
+					int brojDece = Integer.parseInt(br.readLine());
+					
+					System.out.print("Unesite mesecna primanja: ");
+					int mesecnaPrimanja = Integer.parseInt(br.readLine());
+					
+					Domacinstvo domacinstvo = new Domacinstvo();
+					domacinstvo.setMesto(mesto);
+					domacinstvo.setBrojOdraslih(brojOdraslih);
+					domacinstvo.setBrojDece(brojDece);
+					domacinstvo.setMesecnaPrimanja(mesecnaPrimanja);
+
+					domacinstva.add(domacinstvo);
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Greska: " + e.getMessage());
+		}
+	}	
+}
+
+
+package ispravka_koda;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+public class UpisivanjeUTXTFajl {
+	public static void upisiProsteBrojeve() {
+		try {
+			PrintWriter out = new PrintWriter(new FileWriter("brojevi.txt"));
+
+			for (int i = 1; i <= 100; i++) {
+				boolean prost = true;
+				for (int j = 2; j < i; j++)
+					if (i % j == 0) {
+						prost = false;
+						break;
+					}
+				if (prost)
+					out.println(i);
+			}
+			
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+package ispravka_koda;
+
+public class ProbaUpisivanjeUTXTFajl {
+
+	public static void main(String[] args) {
+		UpisivanjeUTXTFajl.upisiProsteBrojeve();
+	}
+}
+

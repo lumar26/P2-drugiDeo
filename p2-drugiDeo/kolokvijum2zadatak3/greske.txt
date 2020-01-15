@@ -1,0 +1,2 @@
+Ime i prezime: Filip Filipovic; klub: Pro Recco; poeni: 10
+ Vec postoji u listi
